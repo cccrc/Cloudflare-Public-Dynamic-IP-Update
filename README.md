@@ -1,6 +1,9 @@
 # Cloudflare Public Dynamic IP Update
 Updating public dynamic IP address to existing cloudflare DNS record (Only work for updating single DNS Zone)
 
+This fork is for:
+- the use of env variables instead of config file
+- logging to system log instead of console
 
 ## Requirement
 Using [curl](https://en.wikipedia.org/wiki/CURL), [jq](https://stedolan.github.io/jq/) (Need to install **epel-release** prior to install jq in CentOS), and [dig](https://en.wikipedia.org/wiki/Dig_(command)) command. <br/>
@@ -17,22 +20,3 @@ You can find zone ID of your DNS Zone on the right sidebar of cloudflare DNS ove
 - **Update-Target**<br>
 Meaning list of domain address that you want to update linking ip address via this script. List must be separated by single comma(,). Substitute **[List_Of_Domain_Address_You_Want_To_Update]** with your list.<br>
 *e.g. "google.com,www.google.com"*
-
-
-## Tested Environment
-If you used this code in other OS and confirm that it works successfully (in all situation), please make an issue with brief test result.<br/>
-As soon as I check the issue, I will update the list.
-
-#### Test Condition
-- Current IP is same as record's IP, must see the proper message indicating the identity
-- Current IP is not same as record's IP, record's IP must be updated and see the proper message indicating the record has been updated
-- Has no connection, and see the error message
-
-#### Tested OS List
-- Ubuntu 18.04.2 LTS
-- CentOS Linux release 7.6.1810
-
-## Contact
-If you have any question or want to report an error (or any other suggestion), simply make an issue with description.
-
-If you want DNS record IP update shell script for multiple DNS zones, I may work for that. Just simple post an issue on this github repository.
