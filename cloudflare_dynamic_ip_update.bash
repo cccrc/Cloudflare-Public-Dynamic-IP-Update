@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 
 ## Author: Hyecheol (Jerry) Jang
+## Mod: cccrc
 ## Shell Script that check current public (dynamic) ip address of server,
 ## and update it to the Cloudflare DNS record after comparing ip address registered to Cloudflare
 ## basic shell scripting guide https://blog.gaerae.com/2015/01/bash-hello-world.html
@@ -11,33 +12,17 @@ if [ $? == 0 ] && [ ${currentIP} ]; then  ## when dig command run without error,
     ## Making substring, only retrieving ip address of this server
     ## https://stackabuse.com/substrings-in-bash/
     currentIP=$(echo $currentIP | cut -d'"' -f 2)
-    echo "current public IP address is "$currentIP
+    logger "current public IP address is "$currentIP
 else  ## error happens,
-    echo "Check your internet connection, or google DNS server maybe interruptted"
+    logger -s "Check your internet connection, or google DNS server maybe interruptted"
     exit
 fi
 
-## Use Cloudflare API to retrieve recordIP
-## https://api.cloudflare.com/
-## Read configuration from separated cloudflare_config file (need to locate in the same directory)
-## https://stackoverflow.com/questions/10929453/read-a-file-line-by-line-assigning-the-value-to-a-variable
-## https://stackoverflow.com/questions/10586153/split-string-into-an-array-in-bash
-SCRIPT_PATH=$(dirname $(realpath $0))
-readResult=""  ## Store configuration
-while IFS= read -r line || [[ -n "$line" ]]; do
-    readResult+=" "  ## Delimiter: space
-    readResult+="$line"
-done < $SCRIPT_PATH"/cloudflare_config"  ## use cloudflare_config file
-unset IFS
-unset SCRIPT_PATH
-
-## After retrieve information from file, cut result string into configuration elements
-key=$(echo $(echo $readResult | cut -d' ' -f 1) | cut -d'=' -f 2)
-email=$(echo $(echo $readResult | cut -d' ' -f 2) | cut -d'=' -f 2)
-zoneID=$(echo $(echo $readResult | cut -d' ' -f 3) | cut -d'=' -f 2)
-IFS=',' read -r -a updateTarget <<< "$(echo $(echo $readResult | cut -d' ' -f 4) | cut -d'=' -f 2)"
-unset readResult
-unset IFS
+## set Cloudflare config
+key=$CLOUDFLARE_API_KEY
+email=$CLOUDFLARE_EMAIL
+zoneID=$CLOUDFLARE_ZoneID
+updateTarget=$CLOUDFLARE_UpdateTarget
 
 ## Make space for saving record's IP Address, Type, and Name
 declare -a recordIP
@@ -90,7 +75,7 @@ unset recordIP  ## X Need recordIP Anymore
 count=0
 while [ $count -lt ${#needUpdate[@]} ]; do
     if [ ${needUpdate[count]} == 'True' ]; then
-        echo "record IP needs to be updated for "${recordName[count]}
+        logger "record IP needs to be updated for "${recordName[count]}
         success=$(
             curl -s -X PUT "https://api.cloudflare.com/client/v4/zones/$zoneID/dns_records/${dnsID[count]}" \
                 -H "X-Auth-Email: $email" \
@@ -100,12 +85,12 @@ while [ $count -lt ${#needUpdate[@]} ]; do
             jq '.success' | cut -d'"' -f 2
         )
         if [ $success == true ]; then
-            echo "Success update record IP of "${recordName[count]}
+            logger "Success update record IP of "${recordName[count]}
         else
-            echo "Fail to update record IP of "${recordName[count]}"\n""Please Check result!!"
+            logger -s "Fail to update record IP of "${recordName[count]}"\n""Please Check result!!"
         fi
     else
-        echo "record IP does not need to be updated for "${recordName[count]}
+       logger "record IP does not need to be updated for "${recordName[count]}
     fi
     count=$((${count}+1))
 done
